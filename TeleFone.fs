@@ -36,10 +36,11 @@ module Telegram =
       | _                          -> printfn "%s (%s)" JSONEXN __LINE__ ; None
 
   //  getUpdatesO :: string -> int -> option JsonValue
-  let getUpdatesO token offset =
-    let url = getEndpoint token "getUpdates"
+  let getUpdatesO (token: string) (offset: int) =
+    let url     = getEndpoint token "getUpdates"
+    let soffset = sprintf "%d" offset
     try
-      Http.RequestString (url, query=["offset", offset]) |> JsonValue.Parse |> Some
+      Http.RequestString (url, query=["offset", soffset]) |> JsonValue.Parse |> Some
     with
       | :? System.Net.WebException -> printfn "%s (%s)" HTTPEXN __LINE__ ; None 
       | _                          -> printfn "%s (%s)" JSONEXN __LINE__ ; None
@@ -50,11 +51,17 @@ module Telegram =
       | Some jval -> jval.AsBoolean ()
       | None      -> false
 
-  //  result :: JsonValue -> option JsonValue
+  //  result :: JsonValue -> option JsonValue []
   let result (poll: JsonValue) =
     match poll ?= "result" with
       | Some res -> Some <| res.AsArray ()
       | None     -> None
+
+  // update_id :: JsonValue -> int
+  let update_id (element: JsonValue) =
+    match (element ?= "update_id") with
+      | Some id -> id.AsInteger ()
+      | None    -> 0
 
   //  message_id :: JsonValue -> int
   let message_id (element: JsonValue) =
@@ -65,15 +72,17 @@ module Telegram =
           | None   -> 0
       | None    -> 0
 
-  //  sendMessage :: int -> string -> unit
-  let sendMessage token cid body =
-    let url = getEndpoint token "sendMessage"
+  //  sendMessage :: string -> string -> string -> unit
+  let sendMessage (token: string) (cid: string) (body: string) =
+    let url  = getEndpoint token "sendMessage"
     try
       Http.RequestString (url, query=["chat_id", cid; "text", body]) |> ignore 
     with
       | :? System.Net.WebException -> printfn "%s (%s)" HTTPEXN __LINE__ |> ignore
       | _                          -> printfn "%s (%s)" HTTPEXN __LINE__ |> ignore
 
-  //  getNewId :: JsonValue [] -> int
+  //  getNewId :: JsonValue [] -> option int
   let getNewId (msgs: JsonValue []) =
-    msgs |> Seq.map message_id |> Seq.last |> succ
+    match Seq.isEmpty msgs with
+      | true -> None
+      | false -> msgs |> Seq.map update_id |> Seq.last |> succ |> Some
