@@ -1,6 +1,5 @@
-all:
-	fsharpc Main.fs -o main.exe -r lib/FSharp.Data.dll
+dll:
+	fsharpc TeleFone.fs --target:library -o lib/TeleFone.dll -r lib/FSharp.Data.dll -r lib/Zlib.Portable.dll -r lib/FSharp.Data.DesignTime.dll 
 
-run:
-	@fsharpc Main.fs -o main.exe -r lib/FSharp.Data.dll
-	mono main.exe
+example:
+	fsharpc example/Main.fs -o example/main.exe -I lib
