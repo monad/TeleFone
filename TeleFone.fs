@@ -57,26 +57,56 @@ module Telegram =
       | Some res -> Some <| res.AsArray ()
       | None     -> None
 
-  // update_id :: JsonValue -> int
+  //  update_id :: JsonValue -> int
   let update_id (element: JsonValue) =
     match (element ?= "update_id") with
       | Some id -> id.AsInteger ()
       | None    -> 0
 
+  //  message_body :: JsonValue -> string
+  let message_text (element: JsonValue) =
+    match (element ?= "message") with
+      | Some message -> message.["text"].AsString ()
+      | None -> ""
+
+  //  message :: JsonValue -> option JsonValue
+  let message (results: JsonValue) =
+    results ?= "message"
+
+  //  from_id :: JsonValue -> int
+  let from_id (element: JsonValue) =
+    match message element with
+      | Some msg ->
+        match (msg ?= "from") with
+          | Some from -> from.["id"].AsInteger ()
+          | None -> 0
+      | None         -> 0
+
+  //  chat_id :: JsonValue -> int
+  let chat_id (element: JsonValue) =
+    match message element with
+      | Some msg -> 
+        match (msg ?= "chat") with
+          | Some chat -> chat.["id"].AsInteger ()
+          | None -> 0
+      | None     -> 0
+    
+
   //  message_id :: JsonValue -> int
   let message_id (element: JsonValue) =
-    match (element ?= "message") with
+    match message element  with
       | Some msg ->
         match (msg ?= "message_id") with
           | Some n -> n.AsInteger ()
           | None   -> 0
-      | None    -> 0
+      | None     -> 0
 
-  //  sendMessage :: string -> string -> string -> unit
-  let sendMessage (token: string) (cid: string) (body: string) =
+  //  sendMessage :: string -> int -> string -> unit
+  let sendMessage (token: string) (cid: int) (body: string) =
     let url  = getEndpoint token "sendMessage"
+    let scid = sprintf "%d" cid
     try
-      Http.RequestString (url, query=["chat_id", cid; "text", body]) |> ignore 
+      Http.RequestString (url, query=["chat_id", scid; "text", body]) |> ignore 
     with
       | :? System.Net.WebException -> printfn "%s (%s)" HTTPEXN __LINE__ |> ignore
       | _                          -> printfn "%s (%s)" HTTPEXN __LINE__ |> ignore
