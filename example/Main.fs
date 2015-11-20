@@ -14,6 +14,10 @@ module Main =
   let (>>=) = Telegram.(>>=)
   let sleep (x: int) = System.Threading.Thread.Sleep x
 
+  let rand () = 
+    let rng = new System.Random ()
+    rng.Next ()
+
   //  handler :: JsonValue -> unit
   let handler (message: JsonValue) =
     let cid = Telegram.chat_id message
@@ -24,6 +28,8 @@ module Main =
           Telegram.sendMessage TOKEN cid "hi"
       | msg when msg = PREFIX + "me" ->
           Telegram.sendMessage TOKEN cid (sprintf "hi %d" <| Telegram.from_id message)
+      | msg when msg = PREFIX + "rand" ->
+          Telegram.sendMessage TOKEN cid (sprintf "%O" <| rand ())
       | _ -> ignore ()
 
   // --

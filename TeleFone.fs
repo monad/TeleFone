@@ -66,7 +66,10 @@ module Telegram =
   //  message_body :: JsonValue -> string
   let message_text (element: JsonValue) =
     match (element ?= "message") with
-      | Some message -> message.["text"].AsString ()
+      | Some message ->
+        match (message ?= "text") with
+          | Some text -> text.AsString ()
+          | None -> ""
       | None -> ""
 
   //  message :: JsonValue -> option JsonValue
